@@ -3,12 +3,12 @@ from os.path import join
 import cv2
 
 # Get image path
-path, file_name = 'Samples', 'sample_perfect.jpg'
+path, file_name = 'Samples', 'sample_2.jpg'
 
 # Read image
 img = cv2.imread(join(path, file_name))
 
-
+VIEW_IMAGE_FACTOR = 4
 THRESHOLD_VALUE = 50
 THRESHOLD_ITER = 5
 MIN_XLINE = (img.shape[0] * 700)//1024
@@ -16,7 +16,7 @@ MIN_YLINE = 20
 MIN_XGAP = (img.shape[0] * 20)//792
 MIN_YGAP = 3
 HLP_THRES = 80
-MAX_PIXEL_ROT = 3
+MAX_PIXEL_ROT = 300
 
 # Convert image around
 
@@ -34,7 +34,10 @@ img_thresh = getThresh(img)
 # k = cv2.waitKey(0)
 
 def showImg(img):
-    cv2.imshow(file_name, img)
+    #print(img.shape)
+    x, y, _ = img.shape
+    n = cv2.resize(img, (y // VIEW_IMAGE_FACTOR, x // VIEW_IMAGE_FACTOR))
+    cv2.imshow(file_name, n)
     cv2.waitKey(0)
 
 # Display image
@@ -89,15 +92,13 @@ showImg(cv2.drawContours(img, contours, -1, (0,255,0), 3))
 showImg(img)
 
 '''
-(y, x, _) = img.shape
-img_left = img[0:y, 0:x//2]
-img_right = img[0:y, x//2:x]
 
 def test(img_t):
-    edges = cv2.Canny(getThresh(img_t), 100, 250)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, HLP_THRES, minLineLength=MIN_XLINE, maxLineGap=100)
-    
-    showImg(edges)
+    edges = cv2.Canny(getThresh(img_t), 50, 250)
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, HLP_THRES, minLineLength=MIN_XLINE, maxLineGap=400)
+
+    cv2.imshow(file_name, edges)
+    cv2.waitKey(0)
 
     vertical_lines = sorted([l[0] for l in lines if abs(l[0][0]-l[0][2]) < MAX_PIXEL_ROT], key=lambda x:x[0])
 
@@ -109,7 +110,7 @@ def test(img_t):
             prevX = x1
             cv2.line(img_t, (x1, y1), (x2, y2), (255, 0, 0), 3)
 
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, HLP_THRES, minLineLength=MIN_YLINE, maxLineGap=100)
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, HLP_THRES, minLineLength=MIN_YLINE, maxLineGap=100*4)
 
     horizontal_lines = sorted([l[0] for l in lines if abs(l[0][1]-l[0][3]) < MAX_PIXEL_ROT], key=lambda x:x[1])
 
@@ -126,8 +127,8 @@ def test(img_t):
 
     print(max(set(yDif), key=yDif.count))
 
-test(img_left)
-test(img_right)
+test(img)
+#test(img_right)
 
-showImg(img_left)
-showImg(img_right)
+#showImg(img_left)
+showImg(img)
