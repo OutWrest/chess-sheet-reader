@@ -79,12 +79,12 @@ dst = cv2.warpPerspective(right_table, M, (y, x))
 
 # Test tesseract
 
-img_pytes_test = cv2.imread("b.jpg")
+img_pytes_test = cv2.imread("c.jpg")
 # grayscale
 gray = cv2.cvtColor(img_pytes_test,cv2.COLOR_BGR2GRAY) 
 
 # threshold
-_,thresh = cv2.threshold(gray,250,255,cv2.THRESH_BINARY_INV) 
+_,thresh = cv2.threshold(gray,200,255,cv2.THRESH_BINARY_INV) 
 
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 bound = max([(cv2.contourArea(cnt), cnt) for cnt in contours], key=lambda x: x[0])[1]
@@ -92,17 +92,13 @@ rect = cv2.minAreaRect(bound)
 box = cv2.boxPoints(rect)
 box = np.int0(box)
 
-print(box)
-
 # cv2.drawContours(img_pytes_test, [box], -1, (0, 0, 255), 2)
 
 [br_x, br_y], [bl_x, bl_y], [tl_x, tl_y], [tr_x, tr_y] = box
 
 showImg(img_pytes_test[tl_y:br_y, tl_x:br_x])
+showImg(thresh)
 
-data = pytesseract.image_to_data(img_pytes_test[tl_y:br_y, tl_x:br_x], output_type=pytesseract.Output.DICT, config="--psm 7")
+data = pytesseract.image_to_string(img_pytes_test[tl_y:br_y, tl_x:br_x], lang='eng', output_type=pytesseract.Output.DICT, config="--psm 13 --oem 3 -c tessedit_char_whitelist=RBb1il")
 
-print(data['text'])
-
-
-
+print(data) # best?
