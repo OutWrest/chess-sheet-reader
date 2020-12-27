@@ -1,5 +1,4 @@
-import pytest
-import csreader
+import sanity
 
 def test_sanity():
-    assert csreader.testfunc() == "This is a test for github :D"
+    assert sanity.testfunc() == "This is a test for github :D"
