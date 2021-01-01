@@ -3,7 +3,7 @@ name: CS-Reader
 on:
   push:
     branches:
-      - main
+      - '*'
   pull_request:
     branches:
       - '*'
