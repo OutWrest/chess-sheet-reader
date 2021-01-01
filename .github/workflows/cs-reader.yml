@@ -24,9 +24,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Move test files in src directory
+    - name: copy test & src files into a temp directory
       run: |
-        mv -v tests/* src/
+        mkdir temp
+        cp -R src/* temp/
+        cp -R tests/* temp/
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -35,4 +37,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest temp/
+  cleanup:
+    steps:
+    - name: Delete & remove temp directory
+      run: |
+        rm -r temp/*
