@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +37,10 @@ jobs:
     - name: Test with pytest
       run: |
         pytest temp/
+        
   cleanup:
+    runs-on: ubuntu-latest
+
     steps:
     - name: Delete & remove temp directory
       run: |
