@@ -12,3 +12,4 @@ cp -R src/* temp/
 cp -R tests/* temp/
 pytest temp/
 rm -r temp/*
+rm -d temp

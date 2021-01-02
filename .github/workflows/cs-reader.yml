@@ -3,7 +3,8 @@ name: CS-Reader
 on:
   push:
     branches:
-      - '*'
+      - 'main'
+      - 'csimage-class'
   pull_request:
     branches:
       - '*'
@@ -40,3 +41,4 @@ jobs:
     - name: Delete & remove temp directory
       run: |
         rm -r temp/*
+        rm -d temp
