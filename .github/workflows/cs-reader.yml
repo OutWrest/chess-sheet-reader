@@ -37,8 +37,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest temp/
+        cd temp
+        pytest .
     - name: Delete & remove temp directory
       run: |
-        rm -r temp/*
-        rm -d temp
+        cd ..
+        rm -r temp
