@@ -1,15 +1,24 @@
 from csimage import CSImage
 import cv2
+import os
 
-img = cv2.imread("Samples/sample_2.jpg")
-k = CSImage(img)
+SAMPLES_PATH = "Samples/"
 
-# Assumes no other contour is greater than 300px except tables
-# TODO: remove aassumation and standardize a ratio
+class Test_CSImage:
+    def setup_class(self):
+        fullSamples =  [ os.path.join(SAMPLES_PATH, file) for file in [ files for (_, _, files) in os.walk(SAMPLES_PATH) ][0] ]
+        self.fullImgs = [ CSImage(cv2.imread(sample)) for sample in fullSamples ]
+    
+    def teardown_class(self):
+        del self.fullImgs
 
-def test_cv2imageprocessing():
-    assert k.grayscale is not None
-    assert k.height == 3300 and k.width == 2334
+    def test_cv2imageprocessing(self):
+        for k in self.fullImgs:
 
-def test_tablecontourdection():
-    assert len(k.getContoursGreaterThan(300, 300)) == 2
+            for prop in [k.height, k.width, k.grayscale, k.thresh]:
+                assert prop is not None
+
+    def test_tablecontourdection(self):
+        for k in self.fullImgs:
+
+            assert len(k.getContoursGreaterThan(k.height // 2, k.width // 4)) == 2

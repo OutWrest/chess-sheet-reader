@@ -19,7 +19,7 @@ class CSImage:
                                                     2**8 - 1,
                                                     cv2.THRESH_BINARY_INV
                                                     )
-        self.height, self.width, _  = img.shape
+        self.height, self.width, *_  = img.shape
     
     def getContoursGreaterThan(self, minHeight: int, minWidth: int, DILATION_ITER: int = 14) -> List[np.ndarray]:
         """
@@ -41,19 +41,54 @@ class CSImage:
         # returns contours that fit the specific minHeight and minWidth
         return [ contour for contour in contours if (lambda c: c[2] > minWidth and c[3] > minHeight)(cv2.boundingRect(contour)) ]
 
+    def getBetterApprox(self, bound, epsilon: float = 0.009):
+        # Get better approximate of contour, lower dilation + polyDP
+        approx = cv2.approxPolyDP(bound, epsilon * cv2.arcLength(bound, True), True)
+        
+        print(approx)
+        
+        # Transform image to fix contour box
+        tl, tr, bl, br = sorted(approx, key = lambda x: sum(sum(x)))
+
+
+        (x, y, w, h) = cv2.boundingRect(k.tables[0])
+
+        newIm = self.img[y:y+h, x:x+w]
+
+        pt1 = np.float32([[*tr], [*tl], [*bl], [*br]])
+        pt2 = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
+
+        M = cv2.getPerspectiveTransform(pt1, pt2)
+        dst = cv2.warpPerspective(newIm, M, (h, w))
+
+        return dst
+
+    @property
+    def tables(self):
+        # Assumes a at least a 1:2 and 1:4 ratio, [left contour, right contour]
+        t1, t2 = self.getContoursGreaterThan(self.height // 2, self.width // 4)
+        return sorted((t1, t2), key=lambda x: x[0][0][0])
+    
+    def splitTablesByInferance(self):
+        # Split image by knowing how big the table is after getting a better approx
+        pass
+
 if __name__ == '__main__':
-    img = cv2.imread("Samples/sample_2.jpg")
+    img = cv2.imread("Samples/fullsample_1.jpg")
 
     k = CSImage(img)
 
     def showImg(img):
         y, x = k.width, k.height
-        n = cv2.resize(img, (y // 3, x // 3))
+        n = cv2.resize(img, (y // 4, x // 4))
         cv2.imshow("test imge", n)
         cv2.waitKey(0)
 
-    conts = k.getContoursGreaterThan(300, 300)
+    (x, y, w, h) = cv2.boundingRect(k.tables[1])
 
-    cv2.drawContours(img, conts[0], -1, (0, 255, 0), 2)
+    cnts, _ = cv2.findContours(k.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
 
-    showImg(img)
+    c = k.getBetterApprox(bound)
+
+    showImg(c)
