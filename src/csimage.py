@@ -52,8 +52,6 @@ if __name__ == '__main__':
         cv2.imshow("test imge", n)
         cv2.waitKey(0)
 
-    showImg(k.thresh)
-
     conts = k.getContoursGreaterThan(300, 300)
 
     cv2.drawContours(img, conts[0], -1, (0, 255, 0), 2)

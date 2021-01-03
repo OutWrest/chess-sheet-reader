@@ -10,6 +10,8 @@ fi
 mkdir temp
 cp -R src/* temp/
 cp -R tests/* temp/
-pytest temp/
-rm -r temp/*
-rm -d temp
+cd temp
+pytest . 
+sleep 1
+cd ..
+rm -r temp
