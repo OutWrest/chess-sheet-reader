@@ -12,6 +12,5 @@ cp -R src/* temp/
 cp -R tests/* temp/
 cd temp
 pytest . 
-sleep 1
 cd ..
 rm -r temp
