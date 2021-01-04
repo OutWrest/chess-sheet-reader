@@ -33,35 +33,58 @@ class CSImage:
         kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
 
         # Dilate image to get a rough outline where areas of interest are
-        dilated = cv2.dilate(self.thresh, kernel, iterations = DILATION_ITER)
+        # dilated = cv2.dilate(self.thresh, kernel, iterations = DILATION_ITER)
 
         # We won't be using the hierarchy of the contours, rather assuming that contours will include the two tables of moves in the game and just using the size of each contour to determine where each table is, and thus each move.
-        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        contours, _ = cv2.findContours(self.thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        # cv2.drawContours(self.img, contours, -1, (255, 0, 0), 5)
 
         # returns contours that fit the specific minHeight and minWidth
         return [ contour for contour in contours if (lambda c: c[2] > minWidth and c[3] > minHeight)(cv2.boundingRect(contour)) ]
 
-    def getBetterApprox(self, bound, epsilon: float = 0.009):
+    
+    def getBetterApprox(self, cnt, epsilon: float = 0.009):
         # Get better approximate of contour, lower dilation + polyDP
+
+        # Get a bounding box of the contour that needs a better approx
+        (x, y, w, h) = cv2.boundingRect(cnt)
+
+        # Using the thresh img, get the contour without dilation iterations 
+        cnts, _ = cv2.findContours(self.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
+
         approx = cv2.approxPolyDP(bound, epsilon * cv2.arcLength(bound, True), True)
-        
-        print(approx)
-        
-        # Transform image to fix contour box
+
         tl, tr, bl, br = sorted(approx, key = lambda x: sum(sum(x)))
-
-
-        (x, y, w, h) = cv2.boundingRect(k.tables[0])
 
         newIm = self.img[y:y+h, x:x+w]
 
-        pt1 = np.float32([[*tr], [*tl], [*bl], [*br]])
-        pt2 = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
+        rect = np.float32([[*tr], [*tl], [*bl], [*br]])
+        rect_mapped = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
 
-        M = cv2.getPerspectiveTransform(pt1, pt2)
+        M = cv2.getPerspectiveTransform(rect, rect_mapped)
         dst = cv2.warpPerspective(newIm, M, (h, w))
 
         return dst
+
+    def cropApproxAndWarp(self, approx, ) -> np.ndarray:
+        pass 
+    '''
+        # Transform image to fix contour box
+        tl, tr, bl, br = sorted(approx, key = lambda x: sum(sum(x)))
+
+        newIm = self.img[y:y+h, x:x+w]
+
+        rect = np.float32([[*tr], [*tl], [*bl], [*br]])
+        rect_mapped = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
+
+        M = cv2.getPerspectiveTransform(rect, rect_mapped)
+        dst = cv2.warpPerspective(newIm, M, (h, w))
+
+        return dst 
+        '''
 
     @property
     def tables(self):
@@ -84,11 +107,13 @@ if __name__ == '__main__':
         cv2.imshow("test imge", n)
         cv2.waitKey(0)
 
-    (x, y, w, h) = cv2.boundingRect(k.tables[1])
+    #(x, y, w, h) = cv2.boundingRect(k.tables[0])
 
-    cnts, _ = cv2.findContours(k.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
+    #cnts, _ = cv2.findContours(k.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    #bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
 
-    c = k.getBetterApprox(bound)
+    c = k.getBetterApprox(k.tables[1])
+
+    #cv2.drawContours(k.img, [c], -1, (0, 0, 255), 3)
 
     showImg(c)
