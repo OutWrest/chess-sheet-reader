@@ -5,5 +5,6 @@ import pytesseract
 class CSReader:
     def __init__(self) -> None:
         pass
+    
 
     

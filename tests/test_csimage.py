@@ -15,10 +15,11 @@ class Test_CSImage:
     def test_cv2imageprocessing(self):
         for k in self.fullImgs:
 
-            for prop in [k.height, k.width, k.grayscale, k.thresh]:
+            for prop in [k.height, k.width, k.grayscale, k.thresh, k.tables]:
                 assert prop is not None
 
     def test_tablecontourdection(self):
         for k in self.fullImgs:
 
             assert len(k.getContoursGreaterThan(k.height // 2, k.width // 4)) == 2
+            assert len(k.tables) == 2

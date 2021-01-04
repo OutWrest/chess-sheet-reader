@@ -1,2 +1,2 @@
 def testfunc():
-    return "This is a test for github :D"
+    return "This is a test"

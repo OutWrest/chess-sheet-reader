@@ -20,6 +20,10 @@ class CSImage:
                                                     cv2.THRESH_BINARY_INV
                                                     )
         self.height, self.width, *_  = img.shape
+
+        t1, t2 = self.getContoursGreaterThan(self.height // 2, self.width // 4)
+        self.tables = sorted((t1, t2), key=lambda x: x[0][0][0])
+
     
     def getContoursGreaterThan(self, minHeight: int, minWidth: int, DILATION_ITER: int = 14) -> List[np.ndarray]:
         """
@@ -30,7 +34,7 @@ class CSImage:
         :type DILATION_ITER: int number of iterations to dilate the image, see cv2.dilate and BINARY_THRESHOLD
         :rtype List[np.ndarray]: returns a list of cv2 contours, can use cv2.boundingRect to get an approx rect that fit the contours
         """
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
+        # kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
 
         # Dilate image to get a rough outline where areas of interest are
         # dilated = cv2.dilate(self.thresh, kernel, iterations = DILATION_ITER)
@@ -38,63 +42,29 @@ class CSImage:
         # We won't be using the hierarchy of the contours, rather assuming that contours will include the two tables of moves in the game and just using the size of each contour to determine where each table is, and thus each move.
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-        # cv2.drawContours(self.img, contours, -1, (255, 0, 0), 5)
-
         # returns contours that fit the specific minHeight and minWidth
         return [ contour for contour in contours if (lambda c: c[2] > minWidth and c[3] > minHeight)(cv2.boundingRect(contour)) ]
 
-    
-    def getBetterApprox(self, cnt, epsilon: float = 0.009):
-        # Get better approximate of contour, lower dilation + polyDP
+    def warptoContour(self, cnt: np.ndarray, epsilon: float = 0.009) -> np.ndarray:
+        """
+        Returns a warpped image on a specific contour
 
-        # Get a bounding box of the contour that needs a better approx
-        (x, y, w, h) = cv2.boundingRect(cnt)
-
-        # Using the thresh img, get the contour without dilation iterations 
-        cnts, _ = cv2.findContours(self.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
-
-        approx = cv2.approxPolyDP(bound, epsilon * cv2.arcLength(bound, True), True)
+        :type cnt: np.ndarray contour to crop image on
+        :type epsilon: float describing the approximation accuracy, how far away from original curve
+        :rtype np.ndarray: returns a warped image to fit the contour
+        """
+        approx = cv2.approxPolyDP(cnt, epsilon * cv2.arcLength(cnt, True), True)
 
         tl, tr, bl, br = sorted(approx, key = lambda x: sum(sum(x)))
 
-        newIm = self.img[y:y+h, x:x+w]
-
+        # Map points to page height 
         rect = np.float32([[*tr], [*tl], [*bl], [*br]])
-        rect_mapped = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
+        rect_mapped = np.float32([[self.height, 0], [0, 0], [0, self.width], [self.height, self.width]])
 
-        M = cv2.getPerspectiveTransform(rect, rect_mapped)
-        dst = cv2.warpPerspective(newIm, M, (h, w))
+        M = cv2.getPerspectiveTransform(rect, rect_mapped) 
+        warped = cv2.warpPerspective(self.img, M, (self.height, self.width))
 
-        return dst
-
-    def cropApproxAndWarp(self, approx, ) -> np.ndarray:
-        pass 
-    '''
-        # Transform image to fix contour box
-        tl, tr, bl, br = sorted(approx, key = lambda x: sum(sum(x)))
-
-        newIm = self.img[y:y+h, x:x+w]
-
-        rect = np.float32([[*tr], [*tl], [*bl], [*br]])
-        rect_mapped = np.float32([[h, 0], [0, 0], [0, w], [h, w]])
-
-        M = cv2.getPerspectiveTransform(rect, rect_mapped)
-        dst = cv2.warpPerspective(newIm, M, (h, w))
-
-        return dst 
-        '''
-
-    @property
-    def tables(self):
-        # Assumes a at least a 1:2 and 1:4 ratio, [left contour, right contour]
-        t1, t2 = self.getContoursGreaterThan(self.height // 2, self.width // 4)
-        return sorted((t1, t2), key=lambda x: x[0][0][0])
-    
-    def splitTablesByInferance(self):
-        # Split image by knowing how big the table is after getting a better approx
-        pass
+        return warped
 
 if __name__ == '__main__':
     img = cv2.imread("Samples/fullsample_1.jpg")
@@ -107,13 +77,6 @@ if __name__ == '__main__':
         cv2.imshow("test imge", n)
         cv2.waitKey(0)
 
-    #(x, y, w, h) = cv2.boundingRect(k.tables[0])
-
-    #cnts, _ = cv2.findContours(k.thresh[y:y+h, x:x+w], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    #bound = max([ (cv2.contourArea(cnt), cnt) for cnt in cnts ], key = lambda x: x[0])[1]
-
-    c = k.getBetterApprox(k.tables[1])
-
-    #cv2.drawContours(k.img, [c], -1, (0, 0, 255), 3)
+    c = k.cropAndWarptoContour(k.tables[1])
 
     showImg(c)
