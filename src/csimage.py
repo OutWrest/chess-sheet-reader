@@ -77,6 +77,8 @@ if __name__ == '__main__':
         cv2.imshow("test imge", n)
         cv2.waitKey(0)
 
-    c = k.cropAndWarptoContour(k.tables[1])
+    showImg(img)
+
+    c = k.warptoContour(k.tables[0])
 
     showImg(c)
